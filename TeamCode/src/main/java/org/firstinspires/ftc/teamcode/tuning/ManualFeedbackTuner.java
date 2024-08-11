@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
@@ -11,7 +12,7 @@ import org.firstinspires.ftc.teamcode.ThreeDeadWheelLocalizer;
 import org.firstinspires.ftc.teamcode.TwoDeadWheelLocalizer;
 
 public final class ManualFeedbackTuner extends LinearOpMode {
-    public static double DISTANCE = 64;
+    public static double DISTANCE = 20;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -23,8 +24,9 @@ public final class ManualFeedbackTuner extends LinearOpMode {
             while (opModeIsActive()) {
                 Actions.runBlocking(
                         drive.actionBuilder(new Pose2d(0, 0, 0))
-                                .lineToX(DISTANCE)
-                                .lineToX(0)
+                                .splineToConstantHeading(new Vector2d(DISTANCE, DISTANCE/2), 0)
+                                .setReversed(true)
+                                .splineToConstantHeading(new Vector2d(0, 0), Math.toRadians(180))
                                 .build());
             }
         } else if (TuningOpModes.DRIVE_CLASS.equals(MecanumDrive.class)) {
