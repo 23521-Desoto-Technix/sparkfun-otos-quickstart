@@ -7,7 +7,7 @@ This repository allows teams to integrate it into Roadrunner as a drop-in replac
 Ensure that your sensor is properly mounted 10mm above the ground using the directions on the product page.
 
 The OTOS sensor is designed to ONLY work on official field tiles.
-Ensure that all tuning is performed on them. 
+Ensure that all tunin is performed on them. 
 (If you have nothing else to test on, it seems to also be able to track a hardwood floor as well.
 However, tuning numbers will likely be different between them.)
 
