@@ -112,7 +112,7 @@ public class SparkFunOTOSDrive extends MecanumDrive {
         SparkFunOTOS.Pose2D otosAcc = new SparkFunOTOS.Pose2D();
         otos.getPosVelAcc(otosPose,otosVel,otosAcc);
         pose = OTOSPoseToRRPose(otosPose);
-        pose = new Pose2d(pose.position.y,-pose.position.x, pose.heading.toDouble());
+        //pose = new Pose2d(pose.position.y,-pose.position.x, pose.heading.toDouble());
         lastOtosPose = pose;
 
         // rr standard

@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.tuning;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.MecanumDrive;
@@ -11,8 +12,9 @@ import org.firstinspires.ftc.teamcode.TankDrive;
 import org.firstinspires.ftc.teamcode.ThreeDeadWheelLocalizer;
 import org.firstinspires.ftc.teamcode.TwoDeadWheelLocalizer;
 
+@Autonomous
 public final class ManualFeedbackTuner extends LinearOpMode {
-    public static double DISTANCE = 20;
+    public static double DISTANCE = 60;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -24,9 +26,14 @@ public final class ManualFeedbackTuner extends LinearOpMode {
             while (opModeIsActive()) {
                 Actions.runBlocking(
                         drive.actionBuilder(new Pose2d(0, 0, 0))
-                                .splineToConstantHeading(new Vector2d(DISTANCE, DISTANCE/2), 0)
-                                .setReversed(true)
-                                .splineToConstantHeading(new Vector2d(0, 0), Math.toRadians(180))
+                                .splineToConstantHeading(new Vector2d(45/2, 45/2), Math.toRadians(90))
+                                .splineToConstantHeading(new Vector2d(0, 45), Math.toRadians(180))
+                                .splineToConstantHeading(new Vector2d(-45/2, 45/2), Math.toRadians(-90))
+                                .splineToConstantHeading(new Vector2d(0, 0), Math.toRadians(0))
+                                .splineToConstantHeading(new Vector2d(45/2, -45/2), Math.toRadians(-90))
+                                .splineToConstantHeading(new Vector2d(0, -45), Math.toRadians(180))
+                                .splineToConstantHeading(new Vector2d(-45/2, -45/2), Math.toRadians(90))
+                                .splineToConstantHeading(new Vector2d(0, 0), Math.toRadians(0))
                                 .build());
             }
         } else if (TuningOpModes.DRIVE_CLASS.equals(MecanumDrive.class)) {
