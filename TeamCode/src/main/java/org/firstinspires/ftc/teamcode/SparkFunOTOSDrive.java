@@ -10,10 +10,14 @@ import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.FlightRecorder;
 import com.acmerobotics.roadrunner.ftc.SparkFunOTOSCorrected;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.messages.PoseMessage;
 
 /**
@@ -38,7 +42,7 @@ public class SparkFunOTOSDrive extends MecanumDrive {
         // tweaked slightly to compensate for imperfect mounting (eg. 1.3 degrees).
 
         // RR localizer note: these units are inches and radians
-        public SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(-0.162199, -2.733365, Math.toRadians(-90));
+        public SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(-0.162199, -2.733365, Math.toRadians(90));
 
         // Here we can set the linear and angular scalars, which can compensate for
         // scaling issues with the sensor measurements. Note that as of firmware
@@ -63,6 +67,7 @@ public class SparkFunOTOSDrive extends MecanumDrive {
     public static SparkFunOTOSDrive.Params PARAMS = new SparkFunOTOSDrive.Params();
     public SparkFunOTOSCorrected otos;
     private Pose2d lastOtosPose = pose;
+    Limelight3A limelight;
 
     public SparkFunOTOSDrive(HardwareMap hardwareMap, Pose2d pose) {
         super(hardwareMap, pose);
@@ -92,9 +97,37 @@ public class SparkFunOTOSDrive extends MecanumDrive {
         // Will get better number once I actually get this sensor
         System.out.println(otos.calibrateImu(255, true));
         System.out.println("OTOS calibration complete!");
+        this.limelight = hardwareMap.get(Limelight3A.class, "limelight");
+
+        this.limelight.pipelineSwitch(0);
+
+        /*
+         * Starts polling for data.  If you neglect to call start(), getLatestResult() will return null.
+         */
+        this.limelight.start();
     }
     @Override
     public PoseVelocity2d updatePoseEstimate() {
+        this.limelight.updateRobotOrientation(Math.toDegrees(pose.heading.toDouble()));
+        LLResult result = this.limelight.getLatestResult();
+
+        // passed by reference
+        // reading acc is slightly worse (1ms) for loop times but oh well, this is what the driver supports
+        // might have to make a custom driver eventually
+
+        SparkFunOTOS.Pose2D otosPose = new SparkFunOTOS.Pose2D();
+        SparkFunOTOS.Pose2D otosVel = new SparkFunOTOS.Pose2D();
+        SparkFunOTOS.Pose2D otosAcc = new SparkFunOTOS.Pose2D();
+        otos.getPosVelAcc(otosPose,otosVel,otosAcc);
+        Pose2d otosPoserr = new Pose2d(otosPose.y,otosPose.x, otosPose.h);
+        if (result != null && result.isValid()) {
+            Pose3D botpose = result.getBotpose();
+            Position llpose = botpose.getPosition().toUnit(DistanceUnit.INCH);
+            pose = new Pose2d(llpose.x, llpose.y, pose.heading.toDouble());
+            otos.setPosition(RRPoseToOTOSPose(pose));
+        } else {
+            pose = OTOSPoseToRRPose(otosPose).times(new Pose2d(0,0,Math.toRadians(-90)));
+        }
         if (lastOtosPose != pose) {
             // rr localizer note:
             // something other then this function has modified pose
@@ -103,17 +136,9 @@ public class SparkFunOTOSDrive extends MecanumDrive {
             // this could potentially cause up to 1 loops worth of drift
             // I don't really like this solution at all, but it preserves compatibility
             // the only alternative is to add getter and setters but that breaks compat
-            otos.setPosition(RRPoseToOTOSPose(pose));
+            otos.setPosition(RRPoseToOTOSPose(pose.times(new Pose2d(0,0,Math.toRadians(90)))));
         }
-        // passed by reference
-        // reading acc is slightly worse (1ms) for loop times but oh well, this is what the driver supports
-        // might have to make a custom driver eventually
-        SparkFunOTOS.Pose2D otosPose = new SparkFunOTOS.Pose2D();
-        SparkFunOTOS.Pose2D otosVel = new SparkFunOTOS.Pose2D();
-        SparkFunOTOS.Pose2D otosAcc = new SparkFunOTOS.Pose2D();
-        otos.getPosVelAcc(otosPose,otosVel,otosAcc);
-        pose = OTOSPoseToRRPose(otosPose);
-        //pose = new Pose2d(pose.position.y,-pose.position.x, pose.heading.toDouble());
+
         lastOtosPose = pose;
 
         // rr standard
