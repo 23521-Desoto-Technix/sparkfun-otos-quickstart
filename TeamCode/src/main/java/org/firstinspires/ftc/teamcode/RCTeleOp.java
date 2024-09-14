@@ -1,5 +1,10 @@
 package org.firstinspires.ftc.teamcode;
 
+import static org.firstinspires.ftc.teamcode.Drawing.drawRobot;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -29,13 +34,20 @@ public class RCTeleOp extends LinearOpMode {
         backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         waitForStart();
+        Pose2d beginPose = new Pose2d(0, 0, 0);
+        SparkFunOTOSDrive drive = new SparkFunOTOSDrive(hardwareMap, beginPose);
 
         if (isStopRequested()) return;
 
         while (opModeIsActive()) {
-
+            drive.updatePoseEstimate();
+            TelemetryPacket packet = new TelemetryPacket();
+            drawRobot(packet.fieldOverlay(), drive.pose);
+            FtcDashboard dashboard = FtcDashboard.getInstance();
+            dashboard.sendTelemetryPacket(packet);
+            telemetry.addData("Pose", drive.pose);
             double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
-            double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
+            double x = -gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
             double rx = gamepad1.right_stick_x;
 
             // Denominator is the largest motor power (absolute value) or 1
