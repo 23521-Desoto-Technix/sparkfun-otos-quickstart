@@ -13,6 +13,7 @@ public final class Drawing {
 
         c.setStrokeWidth(1);
         c.strokeCircle(t.position.x, t.position.y, ROBOT_RADIUS);
+        c.strokeCircle(t.position.x, t.position.y, 1);
 
         Vector2d halfv = t.heading.vec().times(0.5 * ROBOT_RADIUS);
         Vector2d p1 = t.position.plus(halfv);
