@@ -34,7 +34,7 @@ public class RCTeleOp extends LinearOpMode {
         backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         waitForStart();
-        Pose2d beginPose = new Pose2d(0, 0, 0);
+        Pose2d beginPose = new Pose2d(0, 0, Math.toRadians(90));
         SparkFunOTOSDrive drive = new SparkFunOTOSDrive(hardwareMap, beginPose);
 
         if (isStopRequested()) return;
@@ -63,6 +63,7 @@ public class RCTeleOp extends LinearOpMode {
             backLeftMotor.setPower(backLeftPower);
             frontRightMotor.setPower(frontRightPower);
             backRightMotor.setPower(backRightPower);
+            telemetry.addData("H", drive.pose.heading.toDouble());
             telemetry.addLine("ROBOT CENTRIC");
             telemetry.update();
         }
