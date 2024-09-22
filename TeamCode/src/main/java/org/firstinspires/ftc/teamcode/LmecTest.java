@@ -52,7 +52,6 @@ import com.qualcomm.robotcore.util.Range;
  */
 @TeleOp
 public class LmecTest extends LinearOpMode {
-    @Override
     CRServo servo;
     public void runOpMode() {
         servo = hardwareMap.get(CRServo.class, "servo");

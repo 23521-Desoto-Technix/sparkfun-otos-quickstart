@@ -9,10 +9,14 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.FlightRecorder;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.messages.PoseMessage;
 
 /**
@@ -62,6 +66,7 @@ public class SparkFunOTOSDrive extends MecanumDrive {
     public static SparkFunOTOSDrive.Params PARAMS = new SparkFunOTOSDrive.Params();
     public SparkFunOTOS otos;
     private Pose2d lastOtosPose = pose;
+    private Limelight3A limelight;
 
     public SparkFunOTOSDrive(HardwareMap hardwareMap, Pose2d pose) {
         super(hardwareMap, pose);
@@ -91,6 +96,11 @@ public class SparkFunOTOSDrive extends MecanumDrive {
         // Will get better number once I actually get this sensor
         System.out.println(otos.calibrateImu(255, true));
         System.out.println("OTOS calibration complete!");
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight.start();
+        limelight.pipelineSwitch(0);
+        otos.setLinearUnit(DistanceUnit.INCH);
+        otos.setAngularUnit(AngleUnit.RADIANS);
     }
     @Override
     public PoseVelocity2d updatePoseEstimate() {
@@ -113,6 +123,19 @@ public class SparkFunOTOSDrive extends MecanumDrive {
         otos.getPosVelAcc(otosPose,otosVel,otosAcc);
         pose = OTOSPoseToRRPose(otosPose);
         //pose = new Pose2d(pose.position.y,-pose.position.x, pose.heading.toDouble());
+        limelight.updateRobotOrientation(Math.toDegrees(otosPose.h));
+        LLResult result = limelight.getLatestResult();
+
+        if (result != null && result.isValid()) {
+            Pose3D botpose = result.getBotpose_MT2();
+            Position llpose = botpose.getPosition().toUnit(DistanceUnit.INCH);
+            pose = new Pose2d(llpose.x, llpose.y, pose.heading.toDouble());
+        } else{
+            pose = new Pose2d(
+                    pose.position.y+otosPose.x-lastOtosPose.position.x,
+                    pose.position.x+otosPose.y-lastOtosPose.position.y,
+                    otosPose.h);
+        }
         lastOtosPose = pose;
 
         // rr standard
