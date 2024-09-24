@@ -41,7 +41,7 @@ public class SparkFunOTOSDrive extends MecanumDrive {
         // tweaked slightly to compensate for imperfect mounting (eg. 1.3 degrees).
 
         // RR localizer note: these units are inches and radians
-        public SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(-0.162199, -2.733365, Math.toRadians(-90));
+        public SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(-0.162199, -2.733365, Math.toRadians(90));
 
         // Here we can set the linear and angular scalars, which can compensate for
         // scaling issues with the sensor measurements. Note that as of firmware
@@ -130,11 +130,9 @@ public class SparkFunOTOSDrive extends MecanumDrive {
             Pose3D botpose = result.getBotpose_MT2();
             Position llpose = botpose.getPosition().toUnit(DistanceUnit.INCH);
             pose = new Pose2d(llpose.x, llpose.y, pose.heading.toDouble());
+            otos.setPosition(new SparkFunOTOS.Pose2D(llpose.x, llpose.y, otosPose.h));
         } else{
-            pose = new Pose2d(
-                    pose.position.y+otosPose.x-lastOtosPose.position.x,
-                    pose.position.x+otosPose.y-lastOtosPose.position.y,
-                    otosPose.h);
+            pose = OTOSPoseToRRPose(otosPose);
         }
         lastOtosPose = pose;
 
