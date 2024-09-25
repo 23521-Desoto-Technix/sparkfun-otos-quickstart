@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.tuning;
 
-/*import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -20,67 +20,23 @@ public final class ManualFeedbackTuner extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         if (TuningOpModes.DRIVE_CLASS.equals(SparkFunOTOSDrive.class)) {
             SparkFunOTOSDrive drive = new SparkFunOTOSDrive(hardwareMap, new Pose2d(0, 0, 0));
-
-            waitForStart();
-
+            while (opModeInInit() && !isStopRequested()) {
+                drive.updatePoseEstimate();
+            }
+            Pose2d origpose = drive.pose;
             while (opModeIsActive()) {
                 Actions.runBlocking(
-                        drive.actionBuilder(new Pose2d(0, 0, 0))
-                                .splineToConstantHeading(new Vector2d(45/2, 45/2), Math.toRadians(90))
-                                .splineToConstantHeading(new Vector2d(0, 45), Math.toRadians(180))
-                                .splineToConstantHeading(new Vector2d(-45/2, 45/2), Math.toRadians(-90))
-                                .splineToConstantHeading(new Vector2d(0, 0), Math.toRadians(0))
-                                .splineToConstantHeading(new Vector2d(45/2, -45/2), Math.toRadians(-90))
-                                .splineToConstantHeading(new Vector2d(0, -45), Math.toRadians(180))
-                                .splineToConstantHeading(new Vector2d(-45/2, -45/2), Math.toRadians(90))
-                                .splineToConstantHeading(new Vector2d(0, 0), Math.toRadians(0))
+                        drive.actionBuilder(drive.pose)
+                                .strafeTo(
+                                        new Vector2d(
+                                                origpose.position.x + 10,
+                                                origpose.position.y + 10))
+                                .strafeTo(
+                                        new Vector2d(
+                                                origpose.position.x,
+                                                origpose.position.y))
                                 .build());
             }
-        } else if (TuningOpModes.DRIVE_CLASS.equals(MecanumDrive.class)) {
-            MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
-            
-            if (drive.localizer instanceof TwoDeadWheelLocalizer) {
-                if (TwoDeadWheelLocalizer.PARAMS.perpXTicks == 0 && TwoDeadWheelLocalizer.PARAMS.parYTicks == 0) {
-                    throw new RuntimeException("Odometry wheel locations not set! Run AngularRampLogger to tune them.");
-                }
-            } else if (drive.localizer instanceof ThreeDeadWheelLocalizer) {
-                if (ThreeDeadWheelLocalizer.PARAMS.perpXTicks == 0 && ThreeDeadWheelLocalizer.PARAMS.par0YTicks == 0 && ThreeDeadWheelLocalizer.PARAMS.par1YTicks == 1) {
-                    throw new RuntimeException("Odometry wheel locations not set! Run AngularRampLogger to tune them.");
-                }
-            }
-            waitForStart();
-
-            while (opModeIsActive()) {
-                Actions.runBlocking(
-                    drive.actionBuilder(new Pose2d(0, 0, 0))
-                            .lineToX(DISTANCE)
-                            .lineToX(0)
-                            .build());
-            }
-        } else if (TuningOpModes.DRIVE_CLASS.equals(TankDrive.class)) {
-            TankDrive drive = new TankDrive(hardwareMap, new Pose2d(0, 0, 0));
-
-            if (drive.localizer instanceof TwoDeadWheelLocalizer) {
-                if (TwoDeadWheelLocalizer.PARAMS.perpXTicks == 0 && TwoDeadWheelLocalizer.PARAMS.parYTicks == 0) {
-                    throw new RuntimeException("Odometry wheel locations not set! Run AngularRampLogger to tune them.");
-                }
-            } else if (drive.localizer instanceof ThreeDeadWheelLocalizer) {
-                if (ThreeDeadWheelLocalizer.PARAMS.perpXTicks == 0 && ThreeDeadWheelLocalizer.PARAMS.par0YTicks == 0 && ThreeDeadWheelLocalizer.PARAMS.par1YTicks == 1) {
-                    throw new RuntimeException("Odometry wheel locations not set! Run AngularRampLogger to tune them.");
-                }
-            }
-            waitForStart();
-
-            while (opModeIsActive()) {
-                Actions.runBlocking(
-                    drive.actionBuilder(new Pose2d(0, 0, 0))
-                            .lineToX(DISTANCE)
-                            .lineToX(0)
-                            .build());
-            }
-        } else {
-            throw new RuntimeException();
         }
     }
 }
-*/
