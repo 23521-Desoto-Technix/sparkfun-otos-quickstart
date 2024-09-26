@@ -1,7 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.config.Config;
-//import com.arcrobotics.ftclib.controller.PController;
+import com.arcrobotics.ftclib.controller.PController;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -36,7 +36,7 @@ public class FCTeleOp extends LinearOpMode {
         backLeftMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRightMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        //PController headControl = new PController(kP);
+        PController headControl = new PController(kP);
 
         // Retrieve the IMU from the hardware map
         IMU imu = hardwareMap.get(IMU.class, "imu");
@@ -54,7 +54,7 @@ public class FCTeleOp extends LinearOpMode {
 
         while (opModeIsActive()) {
             double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            //headControl.setP(kP);
+            headControl.setP(kP);
             double setpoint = 0;
             boolean autoh = false;
             if (gamepad1.dpad_up) {
@@ -74,16 +74,16 @@ public class FCTeleOp extends LinearOpMode {
                     setpoint=Math.toRadians(-180);
                 }
             }
-            //double headp = headControl.calculate(
-            //        botHeading, setpoint
-            //);
+            double headp = headControl.calculate(
+                    botHeading, setpoint
+            );
             telemetry.addData("Bot Heading", botHeading);
             double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
             double x = gamepad1.left_stick_x;
             double rx = gamepad1.right_stick_x;
 
             if (autoh) {
-                //rx = headp;
+                rx = headp;
             }
 
             // This button choice was made so that it is hard to hit on accident,

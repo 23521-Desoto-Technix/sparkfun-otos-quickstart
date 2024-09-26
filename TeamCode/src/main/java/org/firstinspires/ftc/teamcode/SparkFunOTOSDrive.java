@@ -9,10 +9,13 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.FlightRecorder;
+import com.acmerobotics.roadrunner.ftc.SparkFunOTOSCorrected;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
+
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
@@ -27,6 +30,7 @@ import org.firstinspires.ftc.teamcode.messages.PoseMessage;
  * Unless otherwise noted, comments are from SparkFun
  */
 public class SparkFunOTOSDrive extends MecanumDrive {
+
     public static class Params {
         // Assuming you've mounted your sensor to a robot and it's not centered,
         // you can specify the offset for the sensor relative to the center of the
@@ -64,14 +68,17 @@ public class SparkFunOTOSDrive extends MecanumDrive {
     }
 
     public static SparkFunOTOSDrive.Params PARAMS = new SparkFunOTOSDrive.Params();
-    public SparkFunOTOS otos;
+    public final IMU imu;
+    public SparkFunOTOSCorrected otos;
     private Pose2d lastOtosPose = pose;
-    private Limelight3A limelight;
+    Limelight3A limelight;
 
     public SparkFunOTOSDrive(HardwareMap hardwareMap, Pose2d pose) {
-        super(hardwareMap, pose);
-        otos = hardwareMap.get(SparkFunOTOS.class,"sensor_otos");
 
+        super(hardwareMap, pose);
+        imu = hardwareMap.get(IMU.class, "imu");
+        imu.resetYaw();
+        otos = hardwareMap.get(SparkFunOTOSCorrected.class,"sensor_otos");
         otos.setLinearUnit(DistanceUnit.INCH);
         otos.setAngularUnit(AngleUnit.RADIANS);
 
@@ -95,45 +102,47 @@ public class SparkFunOTOSDrive extends MecanumDrive {
         // RR localizer note: numSamples number completely arbitrary at the moment, feel free to change to fit your needs
         // Will get better number once I actually get this sensor
         System.out.println(otos.calibrateImu(255, true));
+        otos.setPosition(RRPoseToOTOSPose(pose));
         System.out.println("OTOS calibration complete!");
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.start();
-        limelight.pipelineSwitch(0);
-        otos.setLinearUnit(DistanceUnit.INCH);
-        otos.setAngularUnit(AngleUnit.RADIANS);
+        this.limelight = hardwareMap.get(Limelight3A.class, "limelight");
+
+        this.limelight.pipelineSwitch(0);
+
+        /*
+         * Starts polling for data.  If you neglect to call start(), getLatestResult() will return null.
+         */
+        this.limelight.start();
     }
     @Override
     public PoseVelocity2d updatePoseEstimate() {
-        if (lastOtosPose != pose) {
-            // rr localizer note:
-            // something other then this function has modified pose
-            // probably the user
-            // so we override otos pose with the new pose
-            // this could potentially cause up to 1 loops worth of drift
-            // I don't really like this solution at all, but it preserves compatibility
-            // the only alternative is to add getter and setters but that breaks compat
-            otos.setPosition(RRPoseToOTOSPose(pose));
-        }
+        this.limelight.updateRobotOrientation(Math.toDegrees(pose.heading.toDouble()));
+        LLResult result = this.limelight.getLatestResult();
+
         // passed by reference
         // reading acc is slightly worse (1ms) for loop times but oh well, this is what the driver supports
         // might have to make a custom driver eventually
+
         SparkFunOTOS.Pose2D otosPose = new SparkFunOTOS.Pose2D();
         SparkFunOTOS.Pose2D otosVel = new SparkFunOTOS.Pose2D();
         SparkFunOTOS.Pose2D otosAcc = new SparkFunOTOS.Pose2D();
         otos.getPosVelAcc(otosPose,otosVel,otosAcc);
-        pose = OTOSPoseToRRPose(otosPose);
-        //pose = new Pose2d(pose.position.y,-pose.position.x, pose.heading.toDouble());
         limelight.updateRobotOrientation(Math.toDegrees(otosPose.h));
-        LLResult result = limelight.getLatestResult();
-
+        double heading = otosPose.h;
+        // Uncomment for internal imu heading
+        heading = Math.toRadians(imu.getRobotYawPitchRollAngles().getYaw());
         if (result != null && result.isValid()) {
             Pose3D botpose = result.getBotpose_MT2();
             Position llpose = botpose.getPosition().toUnit(DistanceUnit.INCH);
-            pose = new Pose2d(llpose.x, llpose.y, pose.heading.toDouble());
-            otos.setPosition(new SparkFunOTOS.Pose2D(llpose.x, llpose.y, otosPose.h));
-        } else{
-            pose = OTOSPoseToRRPose(otosPose);
+            pose = new Pose2d(llpose.x, llpose.y, heading);
+        } else {
+            pose = new Pose2d(
+                    pose.position.x+otosPose.y,
+                    pose.position.y-otosPose.x,
+                    heading);
         }
+
+        otos.setPosition(RRPoseToOTOSPose(new Pose2d(0,0, heading)));
+
         lastOtosPose = pose;
 
         // rr standard
