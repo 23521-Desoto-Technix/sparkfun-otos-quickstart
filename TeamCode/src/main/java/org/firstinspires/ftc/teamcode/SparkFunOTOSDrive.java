@@ -69,7 +69,7 @@ public class SparkFunOTOSDrive extends MecanumDrive {
 
     public static SparkFunOTOSDrive.Params PARAMS = new SparkFunOTOSDrive.Params();
     public final IMU imu;
-    public SparkFunOTOSCorrected otos;
+    public SparkFunOTOS otos;
     private Pose2d lastOtosPose = pose;
     Limelight3A limelight;
 
@@ -78,7 +78,7 @@ public class SparkFunOTOSDrive extends MecanumDrive {
         super(hardwareMap, pose);
         imu = hardwareMap.get(IMU.class, "imu");
         imu.resetYaw();
-        otos = hardwareMap.get(SparkFunOTOSCorrected.class,"sensor_otos");
+        otos = hardwareMap.get(SparkFunOTOS.class,"sensor_otos");
         otos.setLinearUnit(DistanceUnit.INCH);
         otos.setAngularUnit(AngleUnit.RADIANS);
 
@@ -129,19 +129,17 @@ public class SparkFunOTOSDrive extends MecanumDrive {
         limelight.updateRobotOrientation(Math.toDegrees(otosPose.h));
         double heading = otosPose.h;
         // Uncomment for internal imu heading
+        // get back from your fricking vacation
         heading = Math.toRadians(imu.getRobotYawPitchRollAngles().getYaw());
         if (result != null && result.isValid()) {
-            Pose3D botpose = result.getBotpose_MT2();
+            Pose3D botpose = result.getBotpose();
             Position llpose = botpose.getPosition().toUnit(DistanceUnit.INCH);
             pose = new Pose2d(llpose.x, llpose.y, heading);
+            otos.setPosition(new SparkFunOTOS.Pose2D(llpose.x, llpose.y, heading));
         } else {
-            pose = new Pose2d(
-                    pose.position.x+otosPose.y,
-                    pose.position.y-otosPose.x,
-                    heading);
+            pose = OTOSPoseToRRPose(otosPose);
         }
 
-        otos.setPosition(RRPoseToOTOSPose(new Pose2d(0,0, heading)));
 
         lastOtosPose = pose;
 
