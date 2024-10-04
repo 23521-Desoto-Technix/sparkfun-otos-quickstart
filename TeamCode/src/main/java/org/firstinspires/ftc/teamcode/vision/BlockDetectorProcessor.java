@@ -24,7 +24,8 @@ public class BlockDetectorProcessor implements VisionProcessor {
     private enum DetectionMode {
         ALL_COLORS,
         YELLOW_BLUE,
-        YELLOW_RED
+        YELLOW_RED,
+        YELLOW_ONLY,
     }
 
     private DetectionMode detectionMode = DetectionMode.YELLOW_RED;
@@ -123,6 +124,9 @@ public class BlockDetectorProcessor implements VisionProcessor {
                 break;
             case YELLOW_RED:
                 Core.bitwise_or(yellowMask, redMask, combinedMask);
+                break;
+            case YELLOW_ONLY:
+                combinedMask = yellowMask;
                 break;
         }
 
