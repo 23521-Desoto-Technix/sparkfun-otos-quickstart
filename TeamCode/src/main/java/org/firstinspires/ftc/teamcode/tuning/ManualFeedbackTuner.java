@@ -26,15 +26,18 @@ public final class ManualFeedbackTuner extends LinearOpMode {
             Pose2d origpose = drive.pose;
             while (opModeIsActive()) {
                 Actions.runBlocking(
-                        drive.actionBuilder(drive.pose)
-                                .strafeTo(
-                                        new Vector2d(
-                                                origpose.position.x + 10,
-                                                origpose.position.y + 10))
-                                .strafeTo(
-                                        new Vector2d(
+                        drive.actionBuilder(origpose)
+                                .splineToLinearHeading(
+                                        new Pose2d(
+                                                origpose.position.x - 25,
+                                                origpose.position.y + 10,
+                                                Math.toRadians(270)), Math.toRadians(180))
+                                .setReversed(true)
+                                .splineToLinearHeading(
+                                        new Pose2d(
                                                 origpose.position.x,
-                                                origpose.position.y))
+                                                origpose.position.y,
+                                                Math.toRadians(90)), Math.toRadians(-90))
                                 .build());
             }
         }

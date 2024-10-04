@@ -5,6 +5,7 @@ package org.firstinspires.ftc.teamcode;
 import static com.acmerobotics.roadrunner.ftc.OTOSKt.OTOSPoseToRRPose;
 import static com.acmerobotics.roadrunner.ftc.OTOSKt.RRPoseToOTOSPose;
 
+import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
@@ -131,13 +132,14 @@ public class SparkFunOTOSDrive extends MecanumDrive {
         // Uncomment for internal imu heading
         // get back from your fricking vacation
         heading = Math.toRadians(imu.getRobotYawPitchRollAngles().getYaw());
-        if (result != null && result.isValid()) {
-            Pose3D botpose = result.getBotpose();
+        double vel = Math.sqrt((otosVel.x * otosVel.x) + (otosVel.y * otosVel.y));
+        if (result != null && result.isValid() && vel < 2) {
+            Pose3D botpose = result.getBotpose_MT2();
             Position llpose = botpose.getPosition().toUnit(DistanceUnit.INCH);
             pose = new Pose2d(llpose.x, llpose.y, heading);
             otos.setPosition(new SparkFunOTOS.Pose2D(llpose.x, llpose.y, heading));
         } else {
-            pose = OTOSPoseToRRPose(otosPose);
+            pose = new Pose2d(otosPose.x, otosPose.y, heading);
         }
 
 
