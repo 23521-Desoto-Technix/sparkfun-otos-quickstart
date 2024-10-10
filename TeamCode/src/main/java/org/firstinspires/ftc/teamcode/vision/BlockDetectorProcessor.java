@@ -28,7 +28,23 @@ public class BlockDetectorProcessor implements VisionProcessor {
         YELLOW_ONLY,
     }
 
-    private DetectionMode detectionMode = DetectionMode.YELLOW_RED;
+    private DetectionMode detectionMode = DetectionMode.ALL_COLORS;
+
+    private Mat hsvImage;
+    private Mat redMask1;
+    private Mat redMask2;
+    private Mat yellowMask;
+    private Mat blueMask;
+    private Mat redMask;
+    private Mat combinedMask;
+    private Mat gray;
+    private Mat binary;
+    private Mat distTransform;
+    private Mat sureFg;
+
+    private double size;
+
+
 
     public BlockDetectorProcessor(Telemetry telemetry) {
         this.telemetry = telemetry;
@@ -36,7 +52,17 @@ public class BlockDetectorProcessor implements VisionProcessor {
 
     @Override
     public void init(int width, int height, CameraCalibration calibration) {
-        // Initialization if needed
+        hsvImage = new Mat();
+        redMask1 = new Mat();
+        redMask2 = new Mat();
+        yellowMask = new Mat();
+        blueMask = new Mat();
+        redMask = new Mat();
+        combinedMask = new Mat();
+        gray = new Mat();
+        binary = new Mat();
+        distTransform = new Mat();
+        sureFg = new Mat();
     }
 
     @Override
@@ -74,8 +100,14 @@ public class BlockDetectorProcessor implements VisionProcessor {
         } else {
             telemetry.addData("No blocks detected", "");
         }
-        telemetry.update();
-
+        if (closestBlock != null) {
+            size = closestBlock.size.area();
+        } else {
+            size = 0.0;
+        }
+        telemetry.addData("Size", size);
+        //telemetry.update();
+        releaseMats();
         return bgr; // Return the processed frame if you want to display it
     }
 
@@ -86,13 +118,24 @@ public class BlockDetectorProcessor implements VisionProcessor {
 
     private Pair<RotatedRect, Double> detectBlocks(Mat image) {
         // Convert the image to HSV color space
-        Mat hsvImage = new Mat();
+        hsvImage.setTo(new Scalar(0));
+        redMask1.setTo(new Scalar(0));
+        redMask2.setTo(new Scalar(0));
+        yellowMask.setTo(new Scalar(0));
+        blueMask.setTo(new Scalar(0));
+        redMask.setTo(new Scalar(0));
+        combinedMask.setTo(new Scalar(0));
+        gray.setTo(new Scalar(0));
+        binary.setTo(new Scalar(0));
+        distTransform.setTo(new Scalar(0));
+        sureFg.setTo(new Scalar(0));
+
         Imgproc.cvtColor(image, hsvImage, Imgproc.COLOR_BGR2HSV);
 
         // Define color ranges for red, yellow, and blue blocks (adjust if needed)
         Scalar lowerRed1 = new Scalar(0.0, 100.0, 100.0);
-        Scalar upperRed1 = new Scalar(10.0, 255.0, 255.0);
-        Scalar lowerRed2 = new Scalar(160.0, 100.0, 100.0);
+        Scalar upperRed1 = new Scalar(20.0, 255.0, 255.0);
+        Scalar lowerRed2 = new Scalar(150.0, 100.0, 100.0);
         Scalar upperRed2 = new Scalar(179.0, 255.0, 255.0);
         Scalar lowerYellow = new Scalar(22.0, 100.0, 100.0);
         Scalar upperYellow = new Scalar(38.0, 255.0, 255.0);
@@ -148,7 +191,7 @@ public class BlockDetectorProcessor implements VisionProcessor {
         Core.normalize(distTransform, distTransform, 0.0, 1.0, Core.NORM_MINMAX);
 
         Mat sureFg = new Mat();
-        Imgproc.threshold(distTransform, sureFg, 0.5, 1.0, Imgproc.THRESH_BINARY);
+        Imgproc.threshold(distTransform, sureFg, 0.4, 1.0, Imgproc.THRESH_BINARY);
 
         // Convert to 8-bit single-channel image
         sureFg.convertTo(sureFg, CvType.CV_8UC1);
@@ -172,7 +215,6 @@ public class BlockDetectorProcessor implements VisionProcessor {
                 closestBlock = rect;
             }
         }
-
         // Calculate the angle of the closest block
         Double angle = null;
         if (closestBlock != null) {
@@ -220,7 +262,20 @@ public class BlockDetectorProcessor implements VisionProcessor {
     }
 
     public Double getAngle() {
-        return angle;
+        if (angle != null) {
+            return angle;
+        } else {
+            angle = (double) 0;
+            return angle;
+        }
+    }
+
+    public Double getSize() {
+        return size;
+    }
+
+    public void updatetelemetry() {
+        telemetry.update();
     }
 
     // Helper class for Pair (since Java doesn't have built-in Pair)
@@ -232,5 +287,18 @@ public class BlockDetectorProcessor implements VisionProcessor {
             this.first = first;
             this.second = second;
         }
+    }
+    private void releaseMats() {
+        hsvImage.release();
+        redMask1.release();
+        redMask2.release();
+        yellowMask.release();
+        blueMask.release();
+        redMask.release();
+        combinedMask.release();
+        gray.release();
+        binary.release();
+        distTransform.release();
+        sureFg.release();
     }
 }

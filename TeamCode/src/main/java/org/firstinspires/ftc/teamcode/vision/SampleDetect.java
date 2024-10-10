@@ -7,7 +7,7 @@ import org.firstinspires.ftc.vision.VisionPortal;
 import org.opencv.core.RotatedRect;
 
 @Autonomous
-public class test extends LinearOpMode {
+public class SampleDetect extends LinearOpMode {
 
     @Override
     public void runOpMode() {
