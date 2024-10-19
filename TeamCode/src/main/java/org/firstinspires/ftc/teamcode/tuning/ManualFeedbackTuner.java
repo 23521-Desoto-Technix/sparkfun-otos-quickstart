@@ -27,17 +27,23 @@ public final class ManualFeedbackTuner extends LinearOpMode {
             while (opModeIsActive()) {
                 Actions.runBlocking(
                         drive.actionBuilder(origpose)
-                                .splineToLinearHeading(
-                                        new Pose2d(
-                                                origpose.position.x - 25,
-                                                origpose.position.y + 10,
-                                                Math.toRadians(270)), Math.toRadians(180))
-                                .setReversed(true)
-                                .splineToLinearHeading(
-                                        new Pose2d(
+                                .splineTo(
+                                        new Vector2d(
+                                                origpose.position.x + 10,
+                                                origpose.position.y + 10), Math.toRadians(90))
+                                .splineTo(
+                                        new Vector2d(
                                                 origpose.position.x,
-                                                origpose.position.y,
-                                                Math.toRadians(90)), Math.toRadians(-90))
+                                                origpose.position.y + 20), Math.toRadians(180))
+                                .setReversed(true)
+                                .splineTo(
+                                        new Vector2d(
+                                                origpose.position.x + 10,
+                                                origpose.position.y + 10), Math.toRadians(90))
+                                .splineTo(
+                                        new Vector2d(
+                                                origpose.position.x,
+                                                origpose.position.y), Math.toRadians(0))
                                 .build());
             }
         }

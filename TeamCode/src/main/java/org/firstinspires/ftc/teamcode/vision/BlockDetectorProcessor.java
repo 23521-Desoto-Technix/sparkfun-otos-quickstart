@@ -117,7 +117,6 @@ public class BlockDetectorProcessor implements VisionProcessor {
     }
 
     private Pair<RotatedRect, Double> detectBlocks(Mat image) {
-        // Convert the image to HSV color space
         hsvImage.setTo(new Scalar(0));
         redMask1.setTo(new Scalar(0));
         redMask2.setTo(new Scalar(0));
@@ -129,6 +128,8 @@ public class BlockDetectorProcessor implements VisionProcessor {
         binary.setTo(new Scalar(0));
         distTransform.setTo(new Scalar(0));
         sureFg.setTo(new Scalar(0));
+
+        // Convert the image to HSV color space
 
         Imgproc.cvtColor(image, hsvImage, Imgproc.COLOR_BGR2HSV);
 
