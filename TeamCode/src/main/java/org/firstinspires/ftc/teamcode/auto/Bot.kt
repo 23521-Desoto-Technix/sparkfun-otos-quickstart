@@ -88,7 +88,7 @@ class Bot() {
         val wrappedError = (error + PI) % (2 * PI) - PI
         return wrappedError
     }
-    fun update() {
+    fun update(runauto: Boolean = true) {
         localizer.updatePoseEstimate()
         val xError = xTarget.minus(localizer.pose.position.x)
         val yError = yTarget.minus(localizer.pose.position.y)
@@ -97,22 +97,27 @@ class Bot() {
         //val thetaError = theta?.minus(localizer.pose.heading.toDouble()) ?: 0.0
         var xPower = xController.calculate(xError)
         var yPower = yController.calculate(yError)
-        if (xPower > 0 && xPower < 0.02) {
-            xPower = 0.02
+        if (Vector2d(xError, yError).norm() < posrange/2) {
+            if (xPower > 0 && xPower < 0.02) {
+                xPower = 0.02
+            }
+            if (xPower < 0 && xPower > -0.02) {
+                xPower = -0.02
+            }
+            if (yPower > 0 && yPower < 0.02) {
+                yPower = 0.02
+            }
+            if (yPower < 0 && yPower > -0.02) {
+                yPower = -0.02
+            }
         }
-        if (xPower < 0 && xPower > -0.02) {
-            xPower = -0.02
-        }
-        if (yPower > 0 && yPower < 0.02) {
-            yPower = 0.02
-        }
-        if (yPower < 0 && yPower > -0.02) {
-            yPower = -0.02
-        }
-
         val thetaPower = thetaController.calculate(thetaError)
         //val thetaPower = 0.0
-        drive(xPower, yPower, thetaPower)
+        if (runauto) {
+            drive(xPower, yPower, thetaPower)
+        } else {
+            drive(0.0, 0.0, 0.0)
+        }
         val vel = localizer.pose.minus(localizer.poseHistory.last).line.norm()
         if (Vector2d(xError, yError).norm() < posrange && vel < velrange) {
             busy = false

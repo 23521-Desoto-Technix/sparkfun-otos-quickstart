@@ -9,11 +9,14 @@ class Test : LinearOpMode() {
         val bot = Bot()
         bot.init(hardwareMap, telemetry)
         while (opModeInInit() && !isStopRequested) {
-            bot.update()
+            bot.update(false)
         }
         waitForStart()
         bot.toState(0.0,40.0,Math.toRadians(90.0),0.0, 0.0)
         while (bot.busy && !isStopRequested) {
+            bot.update()
+        }
+        while (!isStopRequested) {
             bot.update()
         }
     }
