@@ -13,5 +13,8 @@ class Test : LinearOpMode() {
         }
         waitForStart()
         bot.toState(0.0,40.0,Math.toRadians(90.0),0.0, 0.0)
+        while (bot.busy && !isStopRequested) {
+            bot.update()
+        }
     }
 }

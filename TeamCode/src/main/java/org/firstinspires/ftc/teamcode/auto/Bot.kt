@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.auto
 
-import android.R.attr
 import com.acmerobotics.dashboard.config.Config
 import com.acmerobotics.roadrunner.Pose2d
 import com.acmerobotics.roadrunner.Vector2d
@@ -24,14 +23,17 @@ class Bot() {
     private lateinit var backLeft: DcMotor
     private lateinit var frontRight: DcMotor
     private lateinit var backRight: DcMotor
-    /*init {
-        frontLeft = hardwareMap.dcMotor["frontLeft"]
-        backLeft = hardwareMap.dcMotor["backLeft"]
-        backLeft = hardwareMap.dcMotor["backLeft"]
-        frontRight = hardwareMap.dcMotor["frontRight"]
-        frontRight.direction = DcMotorSimple.Direction.REVERSE
-        backRight.direction = DcMotorSimple.Direction.REVERSE
-    }*/
+    private val xController = PIDController(0.1, 0.0, 0.001)
+    private val yController = PIDController(0.1, 0.0, 0.001)
+    private val thetaController = PIDController(1.0, 0.0, 0.0)
+    var busy = false
+    var xTarget: Double = 0.0
+    var yTarget: Double = 0.0
+    var thetaTarget: Double = 0.0
+    var posrange = 0.0
+    var velrange = 0.0
+    //var slidervalue = null
+
     //TODO rewrite this to be non blocking.
     fun init(hwmap: HardwareMap, telem: Telemetry) {
         this.hwmap = hwmap
@@ -48,59 +50,21 @@ class Bot() {
         x: Double? = null,
         y: Double? = null,
         theta: Double? = null,
-        radius: Double,
-        velmax: Double = 100.0,
-        slidervalue: Double? = null,
-        blocking: Boolean = true,
+        posrange: Double,
+        velrange: Double = 100.0,
+        //slidervalue: Double? = null,
 
     ) {
-        var xController = PIDController(0.1, 0.0, 0.001)
-        val yController = PIDController(0.1, 0.0, 0.001)
-        val thetaController = PIDController(1.0, 0.0, 0.0)
-        var done = false
-        while (!done) {
-            localizer.updatePoseEstimate()
-            val xError = x?.minus(localizer.pose.position.x) ?: 0.0
-            val yError = y?.minus(localizer.pose.position.y) ?: 0.0
-            val thetaError =
-                    shortestAngularError(localizer.pose.heading.toDouble(), theta ?: localizer.pose.heading.toDouble())
-            //val thetaError = theta?.minus(localizer.pose.heading.toDouble()) ?: 0.0
-            var xPower = xController.calculate(xError)
-            var yPower = yController.calculate(yError)
-            if (xPower > 0 && xPower < 0.02) {
-                xPower = 0.02
-            }
-            if (xPower < 0 && xPower > -0.02) {
-                xPower = -0.02
-            }
-            if (yPower > 0 && yPower < 0.02) {
-                yPower = 0.02
-            }
-            if (yPower < 0 && yPower > -0.02) {
-                yPower = -0.02
-            }
-
-            val thetaPower = thetaController.calculate(thetaError)
-            //val thetaPower = 0.0
-            drive(xPower, yPower, thetaPower)
-            val vel = localizer.pose.minus(localizer.poseHistory.last).line.norm()
-            if ((Vector2d(xError, yError).norm() < radius && vel < velmax) || !blocking) {
-                done = true
-            }
-            telem.addData("Target X", x)
-            telem.addData("Target Y", y)
-            telem.addData("Current X", localizer.pose.position.x)
-            telem.addData("Current Y", localizer.pose.position.y)
-            telem.addData("X Error", xError)
-            telem.addData("Y Error", yError)
-            telem.addData("X Power", xPower)
-            telem.addData("Y Power", yPower)
-            telem.addData("Theta Power", thetaPower)
-            telem.update()
-        }
-        drive(0.0, 0.0, 0.0)
+        xTarget = x ?: xTarget
+        yTarget = y ?: yTarget
+        thetaTarget = theta ?: thetaTarget
+        this.posrange = posrange
+        this.velrange = velrange
+        //this.slidervalue = slidervalue
+        update()
     }
     fun lockPosition() {
+        //TODO
         localizer.updatePoseEstimate()
         val x = localizer.pose.position.x
         val y = localizer.pose.position.y
@@ -126,9 +90,35 @@ class Bot() {
     }
     fun update() {
         localizer.updatePoseEstimate()
-        telem.addData("X", localizer.pose.position.x)
-        telem.addData("Y", localizer.pose.position.y)
-        telem.addData("Heading", localizer.pose.heading.toDouble())
-        telem.update()
+        val xError = xTarget.minus(localizer.pose.position.x)
+        val yError = yTarget.minus(localizer.pose.position.y)
+        val thetaError =
+            shortestAngularError(localizer.pose.heading.toDouble(), thetaTarget)
+        //val thetaError = theta?.minus(localizer.pose.heading.toDouble()) ?: 0.0
+        var xPower = xController.calculate(xError)
+        var yPower = yController.calculate(yError)
+        if (xPower > 0 && xPower < 0.02) {
+            xPower = 0.02
+        }
+        if (xPower < 0 && xPower > -0.02) {
+            xPower = -0.02
+        }
+        if (yPower > 0 && yPower < 0.02) {
+            yPower = 0.02
+        }
+        if (yPower < 0 && yPower > -0.02) {
+            yPower = -0.02
+        }
+
+        val thetaPower = thetaController.calculate(thetaError)
+        //val thetaPower = 0.0
+        drive(xPower, yPower, thetaPower)
+        val vel = localizer.pose.minus(localizer.poseHistory.last).line.norm()
+        if (Vector2d(xError, yError).norm() < posrange && vel < velrange) {
+            busy = false
+        }
+        if (Vector2d(xError, yError).norm() > posrange/3 && vel > velrange/3) {
+            drive(0.0, 0.0, 0.0)
+        }
     }
 }
