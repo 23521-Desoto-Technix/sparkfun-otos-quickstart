@@ -12,11 +12,12 @@ class Test : LinearOpMode() {
             bot.update(false)
         }
         waitForStart()
-        bot.toState(0.0,40.0,Math.toRadians(90.0),0.0, 0.0)
+        bot.toState(0.0,40.0,Math.toRadians(90.0),1.0, 0.0)
         while (bot.busy && !isStopRequested) {
             bot.update()
         }
-        while (!isStopRequested) {
+        bot.toState(0.0, 60.0, Math.toRadians(0.0))
+        while (bot.busy && !isStopRequested) {
             bot.update()
         }
     }

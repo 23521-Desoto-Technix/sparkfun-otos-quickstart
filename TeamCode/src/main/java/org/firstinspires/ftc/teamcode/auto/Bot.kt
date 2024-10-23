@@ -10,8 +10,10 @@ import com.qualcomm.robotcore.hardware.HardwareMap
 import org.firstinspires.ftc.robotcore.external.Telemetry
 import org.firstinspires.ftc.teamcode.SparkFunOTOSDrive
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 
 @Config
@@ -50,7 +52,7 @@ class Bot() {
         x: Double? = null,
         y: Double? = null,
         theta: Double? = null,
-        posrange: Double,
+        posrange: Double = 1.0,
         velrange: Double = 100.0,
         //slidervalue: Double? = null,
 
@@ -62,6 +64,7 @@ class Bot() {
         this.velrange = velrange
         //this.slidervalue = slidervalue
         update()
+        busy = true
     }
     fun lockPosition() {
         //TODO
@@ -116,14 +119,24 @@ class Bot() {
         if (runauto) {
             drive(xPower, yPower, thetaPower)
         } else {
-            drive(0.0, 0.0, 0.0)
+            //drive(0.0, 0.0, 0.0)
         }
-        val vel = localizer.pose.minus(localizer.poseHistory.last).line.norm()
-        if (Vector2d(xError, yError).norm() < posrange && vel < velrange) {
+        val normalizedError = sqrt(abs(xError * xError) + abs(yError + yError))
+        val vel = localizer.pose.minus(localizer.poseHistory.takeLast(2).first()).line.norm()
+        if (normalizedError < posrange ) {
             busy = false
+            drive(0.0,0.0,0.0)
+            telem.addData("Done", normalizedError < posrange)
+            telem.update()
         }
-        if (Vector2d(xError, yError).norm() > posrange/3 && vel > velrange/3) {
+        if (normalizedError < posrange/2 && vel < velrange/2) {
             drive(0.0, 0.0, 0.0)
         }
+        telem.addData("X", localizer.pose.position.x)
+        telem.addData("Y", localizer.pose.position.y)
+        telem.addData("Vel", vel)
+        telem.addData("Total error", normalizedError)
+        telem.addData("Done", normalizedError < posrange)
+        telem.update()
     }
 }
